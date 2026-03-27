@@ -42,5 +42,9 @@ public class test {
 		// Decrypt the encrypted information in the callback
 		String jsonstr = gatewaySdk.symDecrypt("encryptedData .........");
 		System.out.println(jsonstr);
+
+
+		HashMap<String, String> balanceResult = gatewaySdk.balance();
+		System.out.println(balanceResult);
 	}
 }

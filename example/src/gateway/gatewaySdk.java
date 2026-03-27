@@ -221,6 +221,42 @@ public  class gatewaySdk {
         }
     }
 
+    public static HashMap<String, String> balance() {
+        HashMap<String, String> result = new HashMap<String, String>();
+        try
+        {
+            String token = getToken();
+            if (token.isEmpty())return result;
+            String requestUrl = "gateway/" + gatewayCfg.VERSION_NO + "/getBalance";
+            HashMap<String, String> cnst = generateConstant(requestUrl);
+            // payoutspeed contain "fast", "normal", "slow" ,default is : "fast"
+            // Remember, the format of json and the order of json attributes must be the same as the SDK specifications.
+            // The sorting rules of Json attribute data are arranged from [a-z]
+            String bodyJson = "{}";
+            //String bodyJson = "{\"callbackUrl\\\":\"https://www.google.com\",\"order\":{\"amount\":\"" + amount.toString() + "\",\"currencyType\":\"" + (currency.equals("") ? "MYR" : currency) + "\",\"id\":\"" + orderId + "\"},\"payoutspeed\\\":\"normal\",\"recipient\":{\"email\":\"" + recipientEmail + "\",\"methodRef\":\"" + refName + "\",\"methodType\":\"" + bankCode + "\",\"methodValue\":\"" + accountNumber + "\",\"name\":\"" + cardholder + "\",\"phone\":\"" + recipientPhone + "\"}}";
+            String base64ReqBody = sortedAfterToBased64(bodyJson);
+            String signature = createSignature(cnst, base64ReqBody);
+            String encryptData = symEncrypt(base64ReqBody);
+            String json = "{\"data\":\"" + encryptData + "\"}";
+            String[] keys = new String[] { "code","message", "encryptedData" };
+            HashMap<String, String> dict = post(requestUrl, token, signature, json, cnst.get("nonceStr"), cnst.get("timestamp"), keys);
+            if (!dict.get("code").isEmpty() && dict.get("code").equals("1") && !dict.get("encryptedData").isEmpty())
+            {
+                String decryptedData = symDecrypt(dict.get("encryptedData"));
+                result.put("data", decryptedData);
+            }
+            result.put("code", "0");
+            result.put("message", dict.get("message"));
+            return result;
+        }
+        catch (Exception e)
+        {
+            result.put("code","0");
+            result.put("message",e.getMessage());
+            return result;
+        }
+    }
+
     /**
      * get server token
      * @return token
